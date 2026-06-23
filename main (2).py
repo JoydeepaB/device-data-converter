@@ -1,0 +1,55 @@
+import json, unittest, datetime
+
+with open("./data-1.json","r") as f: jsonData1 = json.load(f)
+with open("./data-2.json","r") as f: jsonData2 = json.load(f)
+with open("./data-result.json","r") as f: jsonExpectedResult = json.load(f)
+
+def convertFromFormat1(jsonObject):
+    locationParts = jsonObject["location"].split("/")
+    return {
+        'deviceID': jsonObject['deviceID'],
+        'deviceType': jsonObject['deviceType'],
+        'timestamp': jsonObject['timestamp'],
+        'location': {
+            'country': locationParts[0],
+            'city': locationParts[1],
+            'area': locationParts[2],
+            'factory': locationParts[3],
+            'section': locationParts[4]
+        },
+        'data': {
+            'status': jsonObject['operationStatus'],
+            'temperature': jsonObject['temp']
+        }
+    }
+
+def convertFromFormat2(jsonObject):
+    dt = datetime.datetime.strptime(jsonObject['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    timestamp_ms = round((dt - datetime.datetime(1970, 1, 1)).total_seconds() * 1000)
+    return {
+        'deviceID': jsonObject['device']['id'],
+        'deviceType': jsonObject['device']['type'],
+        'timestamp': timestamp_ms,
+        'location': {
+            'country': jsonObject['country'],
+            'city': jsonObject['city'],
+            'area': jsonObject['area'],
+            'factory': jsonObject['factory'],
+            'section': jsonObject['section']
+        },
+        'data': jsonObject['data']
+    }
+
+def main(jsonObject):
+    if jsonObject.get('device') == None:
+        return convertFromFormat1(jsonObject)
+    return convertFromFormat2(jsonObject)
+
+class TestSolution(unittest.TestCase):
+    def test_dataType1(self):
+        self.assertEqual(main(jsonData1), jsonExpectedResult)
+    def test_dataType2(self):
+        self.assertEqual(main(jsonData2), jsonExpectedResult)
+
+if __name__ == '__main__':
+    unittest.main()
